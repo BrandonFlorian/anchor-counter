@@ -8,8 +8,10 @@ pub mod anchor_counter {
 
     pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
         let counter = &mut ctx.accounts.counter;
-        counter.count = 0;
+        counter.bump = ctx.bumps.counter;
+        //counter.count = 0;
         msg!("Counter account created. Current count: {}", counter.count);
+        msg!("Counter bump: {}", counter.bump);
         Ok(())
     }
 
@@ -28,14 +30,24 @@ pub mod anchor_counter {
         msg!("Counter decremented. Current count: {}", counter.count);
         Ok(())     
     }
+
+    pub fn get_count(ctx: Context<GetCount>) -> Result<()> {
+        let counter = &ctx.accounts.counter;
+        msg!("Current count: {}", counter.count);
+        Ok(())
+    }
 }
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
-    #[account(init, payer = user, space = 8 + 8)]
-    pub counter: Account<'info, Counter>,
     #[account(mut)]
     pub user: Signer<'info>,
+    #[account(
+        init, 
+        seeds = [b"counter"],
+        payer = user, 
+        space = 8 + Counter::INIT_SPACE)]
+    pub counter: Account<'info, Counter>,
     pub system_program: Program<'info, System>,
 }
 
@@ -49,4 +61,6 @@ pub struct Update<'info> {
 #[account]
 pub struct Counter {
     pub count: u64,
+    pub bump: u8,
 }
+
